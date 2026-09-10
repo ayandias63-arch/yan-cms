@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Yan CMS</title>
+  <style>
+    :root{font-family:DM Sans,Arial,sans-serif;color:#173446;background:#f7f8f8}*{box-sizing:border-box}body{margin:0}a{color:inherit}.page{min-height:100vh}.hero{min-height:70vh;display:flex;align-items:flex-end;padding:clamp(32px,7vw,96px);color:#fff;background:#173446 center/cover no-repeat}.hero-content{width:min(900px,100%)}.logo{width:64px;height:64px;object-fit:contain;margin-bottom:34px;border-radius:16px;background:#f3a36f}.eyebrow{color:#b5c7ca;font-size:11px;font-weight:700;letter-spacing:.16em;text-transform:uppercase}.hero h1{max-width:800px;margin:16px 0;font-size:clamp(42px,8vw,88px);line-height:.98;letter-spacing:-.06em}.hero p{max-width:620px;color:#d3e0e0;font-size:clamp(17px,2vw,22px);line-height:1.5}.content{width:min(1120px,calc(100% - 40px));margin:auto;padding:70px 0}.section{margin-bottom:70px}.section h2{margin:10px 0 20px;font-size:30px;letter-spacing:-.04em}.section p{max-width:760px;color:#667d84;line-height:1.75}.section-list{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px;margin-top:24px}.section-card,.contact-card{padding:22px;border:1px solid #e1e9e9;border-radius:12px;background:#fff}.section-card p{margin:0;font-size:14px}.services{display:flex;flex-wrap:wrap;gap:10px}.service{padding:11px 15px;border-radius:999px;color:#3e806f;background:#e5f4ed;font-size:13px;font-weight:700}.contact-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px}.contact-card span{display:block;margin-bottom:8px;color:#9aa9ad;font-size:11px;text-transform:uppercase;letter-spacing:.1em}.contact-card strong{font-size:15px}.whatsapp{display:inline-flex;margin-top:20px;padding:13px 17px;border-radius:8px;color:#fff;background:#24966d;text-decoration:none;font-weight:700}.socials{display:flex;flex-wrap:wrap;gap:14px}.socials a{color:#5c8792;font-weight:700;text-decoration:none}.empty{display:grid;min-height:100vh;place-items:center;padding:30px;text-align:center;color:#73868c}.error{color:#a44f47}.loading{color:#789096}@media(max-width:600px){.hero{min-height:76vh;padding:28px 20px}.content{width:min(100% - 32px,1120px);padding:48px 0}.section{margin-bottom:52px}}
+  </style>
+</head>
+<body>
+  <main id="app" class="empty"><p class="loading">Carregando site...</p></main>
+  <script>
+    const API_URL = 'http://localhost:5000';
+    const assetUrl = (url) => url && url.startsWith('/') ? `${API_URL}${url}` : url;
+    const slug = new URLSearchParams(window.location.search).get('client');
+    const escapeHtml = (value = '') => String(value).replace(/[&<>'"]/g, (char) => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', "'":'&#039;', '"':'&quot;' }[char]));
+    const list = (values = []) => values.filter(Boolean).map((value) => escapeHtml(value));
+    const render = ({ client, content }) => {
+      document.title = escapeHtml(content.mainTitle || client.name);
+      const sections = list(content.sectionTexts).map((text) => `<article class="section-card"><p>${text}</p></article>`).join('');
+      const services = list(content.services).map((service) => `<span class="service">${service}</span>`).join('');
+      const socials = Object.entries(content.socialLinks || {}).filter(([, url]) => url).map(([name, url]) => `<a href="${escapeHtml(url)}" target="_blank" rel="noreferrer">${escapeHtml(name)}</a>`).join('');
+      const whatsapp = content.whatsapp ? `<a class="whatsapp" href="https://wa.me/${encodeURIComponent(content.whatsapp.replace(/[^0-9]/g, ''))}" target="_blank" rel="noreferrer">Falar pelo WhatsApp →</a>` : '';
+      document.querySelector('#app').className = 'page';
+      document.querySelector('#app').innerHTML = `<section class="hero" style="background-image:linear-gradient(90deg,rgba(23,52,70,.94),rgba(23,52,70,.55)),url('${escapeHtml(assetUrl(content.heroImage) || '')}')"><div class="hero-content">${content.logo ? `<img class="logo" src="${escapeHtml(assetUrl(content.logo))}" alt="Logo de ${escapeHtml(client.name)}">` : ''}<span class="eyebrow">${escapeHtml(client.name)}</span><h1>${escapeHtml(content.mainTitle || client.name)}</h1><p>${escapeHtml(content.description)}</p></div></section><div class="content">${sections ? `<section class="section"><span class="eyebrow">Sobre nós</span><h2>Conheça nosso trabalho</h2><div class="section-list">${sections}</div></section>` : ''}${services ? `<section class="section"><span class="eyebrow">Serviços</span><h2>Como podemos ajudar</h2><div class="services">${services}</div></section>` : ''}<section class="section"><span class="eyebrow">Contato</span><h2>Fale conosco</h2><div class="contact-grid"><div class="contact-card"><span>E-mail</span><strong>${escapeHtml(content.contact?.email || 'Não informado')}</strong></div><div class="contact-card"><span>Telefone</span><strong>${escapeHtml(content.contact?.phone || 'Não informado')}</strong></div><div class="contact-card"><span>Endereço</span><strong>${escapeHtml(content.contact?.address || 'Não informado')}</strong></div></div>${whatsapp}</section>${socials ? `<section class="section"><span class="eyebrow">Redes sociais</span><div class="socials">${socials}</div></section>` : ''}</div>`;
+    };
+    const load = async () => {
+      if (!slug) { document.querySelector('#app').innerHTML = '<div class="empty"><p class="error">Informe o Client na URL: ?client=slug-do-client</p></div>'; return; }
+      try { const response = await fetch(`${API_URL}/api/public/site-content/${encodeURIComponent(slug)}`); const data = await response.json(); if (!response.ok) throw new Error(data.message || 'Site não encontrado'); render(data); } catch (error) { document.querySelector('#app').innerHTML = `<div class="empty"><p class="error">${escapeHtml(error.message)}</p></div>`; }
+    };
+    load();
+    setInterval(load, 15000);
+  </script>
+</body>
+</html>
