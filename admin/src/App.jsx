@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import './App.css'
 import './ClientForm.css'
 
-const API_URL = 'http://localhost:5000'
+const API_URL = import.meta.env.VITE_API_URL
 const mediaUrl = (url) => url?.startsWith('/') ? `${API_URL}${url}` : url
 
 const readSession = () => {
