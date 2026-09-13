@@ -1,8 +1,9 @@
 const express = require("express");
-const { getPublicSiteContent } = require("../controllers/publicSiteController");
+const { getPublicSiteContent, getPublicArticles } = require("../controllers/publicSiteController");
 
 const router = express.Router();
 
 router.get("/site-content/:slug", getPublicSiteContent);
+router.get("/articles/:slug", getPublicArticles);
 
 module.exports = router;

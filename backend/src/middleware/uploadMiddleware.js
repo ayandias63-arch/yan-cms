@@ -6,6 +6,7 @@ const mongoose = require("mongoose");
 const uploadsRoot = path.join(__dirname, "../../uploads");
 const allowedFields = new Set(["logo", "heroImage"]);
 const allowedMimeTypes = new Set(["image/jpeg", "image/png", "image/webp", "image/gif"]);
+const articleExtensions = { "image/jpeg": ".jpg", "image/png": ".png", "image/webp": ".webp", "image/gif": ".gif" };
 
 const storage = multer.diskStorage({
   destination: (req, file, callback) => {
@@ -34,6 +35,29 @@ const uploadImage = multer({
   }
 });
 
+const articleStorage = multer.diskStorage({
+  destination: (req, file, callback) => {
+    const destination = path.join(uploadsRoot, String(req.article.clientId), "articles");
+    fs.mkdirSync(destination, { recursive: true });
+    callback(null, destination);
+  },
+  filename: (req, file, callback) => {
+    const extension = articleExtensions[file.mimetype];
+    callback(null, `article-${Date.now()}-${Math.round(Math.random() * 1e9)}${extension}`);
+  }
+});
+
+const uploadArticleImage = multer({
+  storage: articleStorage,
+  limits: { fileSize: 5 * 1024 * 1024 },
+  fileFilter: (req, file, callback) => {
+    if (!allowedMimeTypes.has(file.mimetype)) {
+      return callback(new Error("Solo se permiten imágenes JPG, PNG, WEBP o GIF"));
+    }
+    callback(null, true);
+  }
+});
+
 const isValidUploadClientId = (req, res, next) => {
   const clientId = req.params.clientId || req.user.clientId;
   if (!mongoose.isValidObjectId(clientId)) {
@@ -49,4 +73,4 @@ const isValidImageField = (req, res, next) => {
   next();
 };
 
-module.exports = { uploadImage, isValidUploadClientId, isValidImageField, uploadsRoot };
+module.exports = { uploadImage, uploadArticleImage, isValidUploadClientId, isValidImageField, uploadsRoot };

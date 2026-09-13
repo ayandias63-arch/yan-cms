@@ -7,11 +7,14 @@
   <style>
     :root{font-family:DM Sans,Arial,sans-serif;color:#173446;background:#f7f8f8}*{box-sizing:border-box}body{margin:0}a{color:inherit}.page{min-height:100vh}.hero{min-height:70vh;display:flex;align-items:flex-end;padding:clamp(32px,7vw,96px);color:#fff;background:#173446 center/cover no-repeat}.hero-content{width:min(900px,100%)}.logo{width:64px;height:64px;object-fit:contain;margin-bottom:34px;border-radius:16px;background:#f3a36f}.eyebrow{color:#b5c7ca;font-size:11px;font-weight:700;letter-spacing:.16em;text-transform:uppercase}.hero h1{max-width:800px;margin:16px 0;font-size:clamp(42px,8vw,88px);line-height:.98;letter-spacing:-.06em}.hero p{max-width:620px;color:#d3e0e0;font-size:clamp(17px,2vw,22px);line-height:1.5}.content{width:min(1120px,calc(100% - 40px));margin:auto;padding:70px 0}.section{margin-bottom:70px}.section h2{margin:10px 0 20px;font-size:30px;letter-spacing:-.04em}.section p{max-width:760px;color:#667d84;line-height:1.75}.section-list{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px;margin-top:24px}.section-card,.contact-card{padding:22px;border:1px solid #e1e9e9;border-radius:12px;background:#fff}.section-card p{margin:0;font-size:14px}.services{display:flex;flex-wrap:wrap;gap:10px}.service{padding:11px 15px;border-radius:999px;color:#3e806f;background:#e5f4ed;font-size:13px;font-weight:700}.contact-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px}.contact-card span{display:block;margin-bottom:8px;color:#9aa9ad;font-size:11px;text-transform:uppercase;letter-spacing:.1em}.contact-card strong{font-size:15px}.whatsapp{display:inline-flex;margin-top:20px;padding:13px 17px;border-radius:8px;color:#fff;background:#24966d;text-decoration:none;font-weight:700}.socials{display:flex;flex-wrap:wrap;gap:14px}.socials a{color:#5c8792;font-weight:700;text-decoration:none}.empty{display:grid;min-height:100vh;place-items:center;padding:30px;text-align:center;color:#73868c}.error{color:#a44f47}.loading{color:#789096}@media(max-width:600px){.hero{min-height:76vh;padding:28px 20px}.content{width:min(100% - 32px,1120px);padding:48px 0}.section{margin-bottom:52px}}
   </style>
+  <style>
+    .articles-list{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px}.article-card{overflow:hidden;border:1px solid #e1e9e9;border-radius:12px;background:#fff}.article-card-image{width:100%;height:180px;object-fit:cover}.article-card-body{padding:22px}.article-card-body h3{margin:8px 0 12px;font-size:21px}.article-card-body p{margin:0 0 14px}.article-meta{display:flex;flex-wrap:wrap;gap:10px;color:#7d9297;font-size:12px}.article-link{margin-top:18px;padding:0;border:0;color:#3e806f;background:none;font:inherit;font-weight:700;cursor:pointer}.article-dialog{position:fixed;inset:0;z-index:2;display:grid;place-items:center;padding:24px;background:rgba(23,52,70,.55)}.article-dialog[hidden]{display:none}.article-dialog-content{width:min(720px,100%);max-height:90vh;overflow:auto;padding:30px;border-radius:12px;background:#fff}.article-dialog-content h2{margin:10px 0 16px;font-size:clamp(28px,5vw,46px);line-height:1.05}.article-dialog-content p{color:#667d84;line-height:1.75;white-space:pre-wrap}.article-dialog-image{width:100%;max-height:340px;object-fit:cover;border-radius:8px}.article-dialog-close{float:right;padding:4px 8px;border:0;color:#173446;background:none;font-size:26px;cursor:pointer}
+  </style>
 </head>
 <body>
   <main id="app" class="empty"><p class="loading">Carregando site...</p></main>
   <script>
-    const API_URL = 'http://localhost:5000';
+    const API_URL = 'https://yan-cms.onrender.com';
     const assetUrl = (url) => url && url.startsWith('/') ? `${API_URL}${url}` : url;
     const slug = new URLSearchParams(window.location.search).get('client');
     const escapeHtml = (value = '') => String(value).replace(/[&<>'"]/g, (char) => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', "'":'&#039;', '"':'&quot;' }[char]));
@@ -29,8 +32,47 @@
       if (!slug) { document.querySelector('#app').innerHTML = '<div class="empty"><p class="error">Informe o Client na URL: ?client=slug-do-client</p></div>'; return; }
       try { const response = await fetch(`${API_URL}/api/public/site-content/${encodeURIComponent(slug)}`); const data = await response.json(); if (!response.ok) throw new Error(data.message || 'Site não encontrado'); render(data); } catch (error) { document.querySelector('#app').innerHTML = `<div class="empty"><p class="error">${escapeHtml(error.message)}</p></div>`; }
     };
-    load();
+    Promise.resolve(load()).then(() => loadArticles());
     setInterval(load, 15000);
+    const formatDate = (value) => value ? new Date(value).toLocaleDateString('pt-BR') : '';
+    const loadArticles = async () => {
+      try {
+        const response = await fetch(`${API_URL}/api/public/articles/${encodeURIComponent(slug)}`);
+        if (!response.ok) return;
+        const articles = await response.json();
+        const content = document.querySelector('.content');
+        if (!content) return;
+        document.querySelector('#articles-section')?.remove();
+        if (!articles.length) return;
+        const section = document.createElement('section');
+        section.id = 'articles-section';
+        section.className = 'section';
+        section.innerHTML = `<span class="eyebrow">Publicações</span><h2>Últimas notícias</h2><div class="articles-list">${articles.map((article, index) => `<article class="article-card">${article.image ? `<img class="article-card-image" src="${escapeHtml(assetUrl(article.image))}" alt="${escapeHtml(article.title)}">` : ''}<div class="article-card-body">${article.category ? `<div class="article-meta"><span>${escapeHtml(article.category)}</span></div>` : ''}<h3>${escapeHtml(article.title)}</h3><p>${escapeHtml(article.excerpt || article.content || '')}</p><div class="article-meta"><span>${escapeHtml(formatDate(article.createdAt))}</span></div><button class="article-link" type="button" data-article-index="${index}">Ler artigo →</button></div></article>`).join('')}</div>`;
+        content.append(section);
+        const dialog = document.createElement('div');
+        dialog.className = 'article-dialog';
+        dialog.setAttribute('role', 'dialog');
+        dialog.setAttribute('aria-modal', 'true');
+        dialog.hidden = true;
+        dialog.innerHTML = '<div class="article-dialog-content"><button class="article-dialog-close" type="button" aria-label="Fechar">×</button><img class="article-dialog-image" alt="" hidden><div class="article-meta"><span data-dialog-category></span><span data-dialog-date></span></div><h2 data-dialog-title></h2><p data-dialog-content></p></div>';
+        document.body.append(dialog);
+        section.querySelectorAll('[data-article-index]').forEach((button) => button.addEventListener('click', () => {
+          const article = articles[button.dataset.articleIndex];
+          dialog.querySelector('[data-dialog-category]').textContent = article.category || '';
+          dialog.querySelector('[data-dialog-date]').textContent = formatDate(article.createdAt);
+          dialog.querySelector('[data-dialog-title]').textContent = article.title;
+          dialog.querySelector('[data-dialog-content]').textContent = article.content || article.excerpt || '';
+          const image = dialog.querySelector('.article-dialog-image');
+          image.src = assetUrl(article.image || '');
+          image.hidden = !article.image;
+          dialog.hidden = false;
+        }));
+        const closeDialog = () => { dialog.hidden = true; };
+        dialog.querySelector('.article-dialog-close').addEventListener('click', closeDialog);
+        dialog.addEventListener('click', (event) => { if (event.target === dialog) closeDialog(); });
+      } catch {}
+    };
+    setInterval(loadArticles, 15000);
   </script>
 </body>
 </html>
