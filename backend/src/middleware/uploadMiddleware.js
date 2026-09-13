@@ -8,18 +8,7 @@ const allowedFields = new Set(["logo", "heroImage"]);
 const allowedMimeTypes = new Set(["image/jpeg", "image/png", "image/webp", "image/gif"]);
 const articleExtensions = { "image/jpeg": ".jpg", "image/png": ".png", "image/webp": ".webp", "image/gif": ".gif" };
 
-const storage = multer.diskStorage({
-  destination: (req, file, callback) => {
-    const clientId = req.params.clientId || req.user.clientId;
-    const destination = path.join(uploadsRoot, String(clientId));
-    fs.mkdirSync(destination, { recursive: true });
-    callback(null, destination);
-  },
-  filename: (req, file, callback) => {
-    const extension = path.extname(file.originalname).toLowerCase();
-    callback(null, `${req.params.field}-${Date.now()}-${Math.round(Math.random() * 1e9)}${extension}`);
-  }
-});
+const storage = multer.memoryStorage();
 
 const uploadImage = multer({
   storage,
@@ -35,17 +24,7 @@ const uploadImage = multer({
   }
 });
 
-const articleStorage = multer.diskStorage({
-  destination: (req, file, callback) => {
-    const destination = path.join(uploadsRoot, String(req.article.clientId), "articles");
-    fs.mkdirSync(destination, { recursive: true });
-    callback(null, destination);
-  },
-  filename: (req, file, callback) => {
-    const extension = articleExtensions[file.mimetype];
-    callback(null, `article-${Date.now()}-${Math.round(Math.random() * 1e9)}${extension}`);
-  }
-});
+const articleStorage = multer.memoryStorage();
 
 const uploadArticleImage = multer({
   storage: articleStorage,
@@ -73,4 +52,21 @@ const isValidImageField = (req, res, next) => {
   next();
 };
 
-module.exports = { uploadImage, uploadArticleImage, isValidUploadClientId, isValidImageField, uploadsRoot };
+const hasValidImageSignature = (file) => {
+  if (!file?.buffer) return false;
+  const buffer = file.buffer;
+  if (file.mimetype === "image/jpeg") return buffer[0] === 0xff && buffer[1] === 0xd8 && buffer[2] === 0xff;
+  if (file.mimetype === "image/png") return buffer.subarray(0, 8).equals(Buffer.from("89504e470d0a1a0a", "hex"));
+  if (file.mimetype === "image/gif") return buffer.subarray(0, 4).toString("ascii") === "GIF8";
+  if (file.mimetype === "image/webp") return buffer.subarray(0, 4).toString("ascii") === "RIFF" && buffer.subarray(8, 12).toString("ascii") === "WEBP";
+  return false;
+};
+
+const validateImageBuffer = (req, res, next) => {
+  if (!hasValidImageSignature(req.file)) {
+    return res.status(400).json({ message: "El contenido del archivo no coincide con una imagen válida" });
+  }
+  next();
+};
+
+module.exports = { uploadImage, uploadArticleImage, isValidUploadClientId, isValidImageField, validateImageBuffer, uploadsRoot, articleExtensions };

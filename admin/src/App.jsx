@@ -820,7 +820,6 @@ function LegacyArticleForm({ session, article, onClose, onSaved, onLogout }) {
     article
       ? {
           title: article.title,
-          slug: article.slug,
           content: article.content,
           excerpt: article.excerpt || "",
           image: article.image || "",
@@ -828,7 +827,6 @@ function LegacyArticleForm({ session, article, onClose, onSaved, onLogout }) {
         }
       : {
           title: "",
-          slug: "",
           content: "",
           excerpt: "",
           image: "",
@@ -910,17 +908,6 @@ function LegacyArticleForm({ session, article, onClose, onSaved, onLogout }) {
               name="title"
               value={form.title}
               onChange={update}
-              required
-            />
-          </label>
-          <label htmlFor="article-slug">
-            Slug
-            <input
-              id="article-slug"
-              name="slug"
-              value={form.slug}
-              onChange={update}
-              pattern="[a-z0-9]+(?:-[a-z0-9]+)*"
               required
             />
           </label>

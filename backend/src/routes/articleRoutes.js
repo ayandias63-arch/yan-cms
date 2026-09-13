@@ -1,6 +1,6 @@
 const express = require("express");
 const protect = require("../middleware/authMiddleware");
-const { uploadArticleImage } = require("../middleware/uploadMiddleware");
+const { uploadArticleImage, validateImageBuffer } = require("../middleware/uploadMiddleware");
 const {
   createArticle,
   listArticles,
@@ -21,7 +21,7 @@ router.post("/", createArticle);
 router.get("/", listArticles);
 router.get("/:id", getArticle);
 router.put("/:id", updateArticle);
-router.post("/:id/image", loadArticleForImage, uploadArticleImage.single("image"), saveArticleImage);
+router.post("/:id/image", loadArticleForImage, uploadArticleImage.single("image"), validateImageBuffer, saveArticleImage);
 router.delete("/:id/image", loadArticleForImage, deleteArticleImage);
 router.patch("/:id/publish", setPublished);
 router.patch("/:id/unpublish", setDraft);

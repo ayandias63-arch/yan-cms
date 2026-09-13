@@ -6,7 +6,7 @@ const allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif']
 
 function ArticleForm({ session, article, onClose, onSaved, onLogout }) {
   const editing = Boolean(article)
-  const [form, setForm] = useState(article ? { title: article.title, slug: article.slug, content: article.content, excerpt: article.excerpt || '', category: article.category || '' } : { title: '', slug: '', content: '', excerpt: '', category: '' })
+  const [form, setForm] = useState(article ? { title: article.title, content: article.content, excerpt: article.excerpt || '', category: article.category || '' } : { title: '', content: '', excerpt: '', category: '' })
   const [selectedFile, setSelectedFile] = useState(null)
   const [removeImage, setRemoveImage] = useState(false)
   const [previewUrl, setPreviewUrl] = useState(mediaUrl(article?.image))

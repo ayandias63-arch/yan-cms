@@ -5,6 +5,7 @@ const Client = require("../models/Client");
 const SiteContent = require("../models/SiteContent");
 const { uploadsRoot } = require("../middleware/uploadMiddleware");
 const { getUserRole } = require("../middleware/authMiddleware");
+const { uploadImage, deleteOwnedFile, deleteFileByReference, isGridFsReference } = require("../services/gridfsService");
 
 const getTargetClientId = (req) => getUserRole(req.user) === "superadmin" ? req.params.clientId : req.user.clientId;
 
@@ -39,15 +40,29 @@ const uploadSiteImage = async (req, res) => {
       return res.status(400).json({ message: "Debes seleccionar una imagen" });
     }
 
-    const imageUrl = `/uploads/${clientId}/${req.file.filename}`;
+    const imageUrl = await uploadImage({
+      buffer: req.file.buffer,
+      filename: req.file.originalname,
+      contentType: req.file.mimetype,
+      clientId,
+      kind: req.params.field
+    });
     const previousContent = await SiteContent.findOne({ clientId }).select(req.params.field).lean();
-    const content = await SiteContent.findOneAndUpdate(
-      { clientId },
-      { clientId, [req.params.field]: imageUrl },
-      { upsert: true, new: true, setDefaultsOnInsert: true }
-    );
+    let content;
+    try {
+      content = await SiteContent.findOneAndUpdate(
+        { clientId },
+        { clientId, [req.params.field]: imageUrl },
+        { upsert: true, new: true, setDefaultsOnInsert: true }
+      );
+    } catch (error) {
+      await deleteFileByReference(imageUrl);
+      throw error;
+    }
 
-    removeStoredImage(previousContent?.[req.params.field]);
+    const previousImage = previousContent?.[req.params.field];
+    if (isGridFsReference(previousImage)) await deleteOwnedFile(previousImage, clientId);
+    else removeStoredImage(previousImage);
 
     return res.json({ field: req.params.field, url: imageUrl, content });
   } catch (error) {
@@ -77,7 +92,8 @@ const deleteSiteImage = async (req, res) => {
     const previousImage = content[req.params.field];
     content[req.params.field] = "";
     await content.save();
-    removeStoredImage(previousImage);
+    if (isGridFsReference(previousImage)) await deleteOwnedFile(previousImage, clientId);
+    else removeStoredImage(previousImage);
 
     return res.json({ field: req.params.field, url: "", content });
   } catch (error) {
@@ -86,7 +102,7 @@ const deleteSiteImage = async (req, res) => {
 };
 
 const removeUploadedFile = (file) => {
-  if (file) fs.unlink(file.path, () => {});
+  if (file?.path) fs.unlink(file.path, () => {});
 };
 
 module.exports = { uploadSiteImage, deleteSiteImage };

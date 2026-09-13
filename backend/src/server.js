@@ -9,6 +9,7 @@ const articleRoutes = require("./routes/articleRoutes");
 const siteContentRoutes = require("./routes/siteContentRoutes");
 const publicSiteRoutes = require("./routes/publicSiteRoutes");
 const imageRoutes = require("./routes/imageRoutes");
+const { getMedia } = require("./controllers/mediaController");
 
 const app = express();
 
@@ -38,6 +39,7 @@ app.use("/api/articles", articleRoutes);
 app.use("/api/site-content", siteContentRoutes);
 app.use("/api/public", publicSiteRoutes);
 app.use("/api/site-images", imageRoutes);
+app.get("/api/media/:fileId", getMedia);
 
 // Ruta de prueba
 app.get("/", (req, res) => {
