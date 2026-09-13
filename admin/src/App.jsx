@@ -152,6 +152,13 @@ function ClientDashboard({ session, onLogout }) {
     const updated = await response.json()
     setArticles((current) => current.map((item) => item._id === updated._id ? updated : item))
   }
+  const saveArticle = (savedArticle) => {
+    setArticles((current) => articleToEdit
+      ? current.map((item) => item._id === savedArticle._id ? savedArticle : item)
+      : [savedArticle, ...current])
+    setArticleFormOpen(false)
+    setArticleToEdit(null)
+  }
   const navItems = [{ id: 'overview', label: 'Visão geral', icon: '⌂' }, { id: 'articles', label: 'Meus artigos', icon: '▤' }, { id: 'site', label: 'Meu site', icon: '◉' }]
   const publishedCount = articles.filter((article) => article.status === 'published').length
 
