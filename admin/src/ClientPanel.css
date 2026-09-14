@@ -1,0 +1,105 @@
+.content-wrap .page-heading h1,
+.content-wrap .welcome-row h1 {
+  font-size: 32px;
+  line-height: 1.15;
+}
+
+.content-wrap .page-heading p,
+.content-wrap .welcome-row p,
+.content-wrap .panel-heading p {
+  font-size: 18px;
+  line-height: 1.5;
+}
+
+.content-wrap .panel-heading h2,
+.content-wrap .client-site-summary strong,
+.content-wrap .quick-action b {
+  font-size: 18px;
+}
+
+.content-wrap .panel,
+.content-wrap .stat-card,
+.content-wrap .client-row,
+.content-wrap .article-row,
+.content-wrap .site-details-grid > div {
+  font-size: 16px;
+}
+
+.content-wrap .stat-copy span,
+.content-wrap .stat-copy small,
+.content-wrap .client-site-summary span,
+.content-wrap .client-site-summary p,
+.content-wrap .quick-action small,
+.content-wrap .article-row-main p,
+.content-wrap .article-row-main small,
+.content-wrap .site-details-grid small {
+  font-size: 14px;
+}
+
+.content-wrap .site-details-grid span,
+.content-wrap .eyebrow {
+  font-size: 14px;
+}
+
+.sidebar .nav-item {
+  font-size: 15px !important;
+}
+
+.client-form label,
+.image-upload label,
+.article-image-upload > span {
+  font-size: 15px;
+}
+
+.client-form input,
+.client-form select,
+.client-form textarea,
+.article-form textarea,
+.image-upload input[type="file"] {
+  font-size: 16px;
+}
+
+.client-form input,
+.client-form select,
+.client-form textarea,
+.article-form textarea {
+  line-height: 1.45;
+}
+
+.primary-button,
+.secondary-button,
+.client-action,
+.text-button {
+  font-size: 15px;
+}
+
+.image-upload img {
+  max-width: 100%;
+  height: 120px;
+  object-fit: contain;
+  object-position: center;
+}
+
+.image-empty-state {
+  color: #84969b;
+  font-size: 14px;
+  font-weight: 400;
+}
+
+.article-image-upload img {
+  object-fit: contain;
+  object-position: center;
+}
+
+@media (max-width: 680px) {
+  .content-wrap .page-heading h1,
+  .content-wrap .welcome-row h1 {
+    font-size: 28px;
+  }
+
+  .content-wrap .page-heading p,
+  .content-wrap .welcome-row p,
+  .content-wrap .panel-heading p {
+    font-size: 16px;
+  }
+}

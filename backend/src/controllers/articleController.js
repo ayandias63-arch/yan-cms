@@ -31,10 +31,12 @@ const generateSlug = (title) => String(title || "")
   .replace(/[^a-z0-9]+/g, "-")
   .replace(/^-+|-+$/g, "");
 
-const removeStoredArticleImage = (imageUrl) => {
+const removeStoredArticleImage = (imageUrl, clientId) => {
   if (!imageUrl || !imageUrl.startsWith("/uploads/")) return;
   const relativePath = imageUrl.slice("/uploads/".length);
   if (!relativePath.match(/^[^/]+\/articles\/[^/]+$/)) return;
+  const [storedClientId] = relativePath.split("/");
+  if (String(storedClientId) !== String(clientId)) return;
   const filePath = path.resolve(uploadsRoot, relativePath);
   if (filePath.startsWith(path.resolve(uploadsRoot) + path.sep)) fs.unlink(filePath, () => {});
 };
@@ -176,7 +178,7 @@ const deleteArticle = async (req, res) => {
     }
 
     if (isGridFsReference(article.image)) await deleteOwnedFile(article.image, article.clientId);
-    else removeStoredArticleImage(article.image);
+    else removeStoredArticleImage(article.image, article.clientId);
     return res.json({ message: "Artículo eliminado correctamente" });
   } catch (error) {
     return handleError(error, res);
@@ -232,7 +234,7 @@ const uploadArticleImage = async (req, res) => {
       throw error;
     }
     if (isGridFsReference(previousImage)) await deleteOwnedFile(previousImage, req.article.clientId);
-    else removeStoredArticleImage(previousImage);
+    else removeStoredArticleImage(previousImage, req.article.clientId);
     return res.json(req.article);
   } catch (error) {
     return handleError(error, res);
@@ -245,7 +247,7 @@ const deleteArticleImage = async (req, res) => {
     req.article.image = "";
     await req.article.save();
     if (isGridFsReference(previousImage)) await deleteOwnedFile(previousImage, req.article.clientId);
-    else removeStoredArticleImage(previousImage);
+    else removeStoredArticleImage(previousImage, req.article.clientId);
     return res.json(req.article);
   } catch (error) {
     return handleError(error, res);

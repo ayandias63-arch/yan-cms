@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import "./App.css";
 import "./ClientForm.css";
+import "./ClientPanel.css";
 import ArticleForm from "./ArticleForm";
 
 const API_URL = import.meta.env.VITE_API_URL;
@@ -566,6 +567,7 @@ function ClientDashboard({ session, onLogout }) {
             client={client}
             content={siteContent}
             onClose={() => setSiteFormOpen(false)}
+            onContentChanged={setSiteContent}
             onSaved={(updated) => {
               setSiteContent(updated);
               setSiteFormOpen(false);
@@ -703,7 +705,7 @@ function ClientSite({ client, content, onEdit }) {
             {content?.logo ? (
               <img src={mediaUrl(content.logo)} alt="Logo do site" />
             ) : (
-              <strong>Não informado</strong>
+              <strong>Nenhum logo selecionado</strong>
             )}
           </div>
           <div>
@@ -711,7 +713,7 @@ function ClientSite({ client, content, onEdit }) {
             {content?.heroImage ? (
               <img src={mediaUrl(content.heroImage)} alt="Imagem principal" />
             ) : (
-              <strong>Não informado</strong>
+              <strong>Nenhuma imagem principal selecionada</strong>
             )}
           </div>
           <div>
@@ -976,7 +978,14 @@ function LegacyArticleForm({ session, article, onClose, onSaved, onLogout }) {
 
 void LegacyArticleForm;
 
-function SiteForm({ session, content, onClose, onSaved, onLogout }) {
+function SiteForm({
+  session,
+  content,
+  onClose,
+  onContentChanged,
+  onSaved,
+  onLogout,
+}) {
   const initial = {
     logo: content?.logo || "",
     heroImage: content?.heroImage || "",
@@ -1100,7 +1109,11 @@ function SiteForm({ session, content, onClose, onSaved, onLogout }) {
             value={form.logo}
             session={session}
             onUploaded={(url) => updateImage("logo", url)}
-            onDeleted={() => updateImage("logo", "")}
+            onChanged={onContentChanged}
+            onDeleted={(nextContent) => {
+              updateImage("logo", "");
+              onContentChanged(nextContent);
+            }}
             onLogout={onLogout}
           />
           <label htmlFor="content-hero">
@@ -1118,7 +1131,11 @@ function SiteForm({ session, content, onClose, onSaved, onLogout }) {
             value={form.heroImage}
             session={session}
             onUploaded={(url) => updateImage("heroImage", url)}
-            onDeleted={() => updateImage("heroImage", "")}
+            onChanged={onContentChanged}
+            onDeleted={(nextContent) => {
+              updateImage("heroImage", "");
+              onContentChanged(nextContent);
+            }}
             onLogout={onLogout}
           />
           <label htmlFor="content-title">
@@ -1268,6 +1285,7 @@ function ImageUpload({
   label,
   value,
   session,
+  onChanged,
   onUploaded,
   onDeleted,
   onLogout,
@@ -1292,6 +1310,7 @@ function ImageUpload({
       if (!response.ok)
         throw new Error(data.message || "Não foi possível enviar a imagem");
       onUploaded(data.url);
+      onChanged(data.content);
     } catch (requestError) {
       setError(requestError.message || "Não foi possível enviar a imagem");
     } finally {
@@ -1309,7 +1328,7 @@ function ImageUpload({
       if (response.status === 401) return onLogout();
       if (!response.ok)
         throw new Error(data.message || "Não foi possível remover a imagem");
-      onDeleted();
+      onDeleted(data.content);
     } catch (requestError) {
       setError(requestError.message || "Não foi possível remover a imagem");
     }
@@ -1337,9 +1356,16 @@ function ImageUpload({
             onClick={remove}
             disabled={uploading}
           >
-            Eliminar imagem
+            {field === "logo" ? "Eliminar logo" : "Eliminar imagem principal"}
           </button>
         </>
+      )}
+      {!value && !uploading && (
+        <small className="image-empty-state">
+          {field === "logo"
+            ? "Nenhum logo selecionado"
+            : "Nenhuma imagem principal selecionada"}
+        </small>
       )}
     </div>
   );

@@ -9,10 +9,14 @@ const { uploadImage, deleteOwnedFile, deleteFileByReference, isGridFsReference }
 
 const getTargetClientId = (req) => getUserRole(req.user) === "superadmin" ? req.params.clientId : req.user.clientId;
 
-const removeStoredImage = (imageUrl) => {
+const removeStoredImage = (imageUrl, clientId) => {
   if (!imageUrl || !imageUrl.startsWith("/uploads/")) return;
 
-  const filePath = path.resolve(uploadsRoot, imageUrl.slice("/uploads/".length));
+  const relativePath = imageUrl.slice("/uploads/".length);
+  const [storedClientId] = relativePath.split("/");
+  if (String(storedClientId) !== String(clientId)) return;
+
+  const filePath = path.resolve(uploadsRoot, relativePath);
   if (filePath.startsWith(path.resolve(uploadsRoot) + path.sep)) {
     fs.unlink(filePath, () => {});
   }
@@ -62,7 +66,7 @@ const uploadSiteImage = async (req, res) => {
 
     const previousImage = previousContent?.[req.params.field];
     if (isGridFsReference(previousImage)) await deleteOwnedFile(previousImage, clientId);
-    else removeStoredImage(previousImage);
+    else removeStoredImage(previousImage, clientId);
 
     return res.json({ field: req.params.field, url: imageUrl, content });
   } catch (error) {
@@ -93,7 +97,7 @@ const deleteSiteImage = async (req, res) => {
     content[req.params.field] = "";
     await content.save();
     if (isGridFsReference(previousImage)) await deleteOwnedFile(previousImage, clientId);
-    else removeStoredImage(previousImage);
+    else removeStoredImage(previousImage, clientId);
 
     return res.json({ field: req.params.field, url: "", content });
   } catch (error) {
