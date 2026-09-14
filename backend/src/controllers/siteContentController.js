@@ -2,6 +2,7 @@ const mongoose = require("mongoose");
 const SiteContent = require("../models/SiteContent");
 const Client = require("../models/Client");
 const { getUserRole } = require("../middleware/authMiddleware");
+const { deleteOwnedFile, isGridFsReference } = require("../services/gridfsService");
 
 const isSuperadmin = (req) => getUserRole(req.user) === "superadmin";
 
@@ -71,11 +72,20 @@ const updateSiteContent = async (req, res) => {
     const clientId = await validateClientScope(req, res);
     if (!clientId) return;
 
+    const previousContent = await SiteContent.findOne({ clientId }).select("logo heroImage").lean();
     const content = await SiteContent.findOneAndUpdate(
       { clientId },
       normalizeContent(req.body, clientId),
       { upsert: true, new: true, setDefaultsOnInsert: true, runValidators: true }
     );
+
+    const previousImages = previousContent ? [previousContent.logo, previousContent.heroImage] : [];
+    const currentImages = [content.logo, content.heroImage];
+    for (const previousImage of previousImages) {
+      if (isGridFsReference(previousImage) && !currentImages.includes(previousImage)) {
+        await deleteOwnedFile(previousImage, clientId);
+      }
+    }
 
     return res.json(content);
   } catch (error) {

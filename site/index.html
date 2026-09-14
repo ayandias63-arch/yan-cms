@@ -43,6 +43,13 @@
       }
     }
   </style>
+  <style>
+    .contact-form{display:grid;gap:14px;margin-top:24px;max-width:720px;padding:24px;border:1px solid #e1e9e9;border-radius:12px;background:#fff}
+    .contact-form label{display:grid;gap:7px;color:#667d84;font-size:13px;font-weight:700}
+    .contact-form input,.contact-form textarea{width:100%;padding:12px 13px;border:1px solid #d6e1e1;border-radius:7px;color:#173446;background:#fbfcfc;font:inherit;font-weight:400}
+    .contact-form textarea{min-height:120px;resize:vertical}
+    .contact-form button{justify-self:start;padding:13px 17px;border:0;border-radius:8px;color:#fff;background:#24966d;font:inherit;font-weight:700;cursor:pointer}
+  </style>
 </head>
 <body>
   <main id="app" class="empty"><p class="loading">Carregando site...</p></main>
@@ -53,6 +60,7 @@
     const escapeHtml = (value = '') => String(value).replace(/[&<>'"]/g, (char) => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', "'":'&#039;', '"':'&quot;' }[char]));
     const list = (values = []) => values.filter(Boolean).map((value) => escapeHtml(value));
     const render = ({ client, content }) => {
+      window.currentSiteData = { client, content };
       document.title = escapeHtml(content.mainTitle || client.name);
       const sections = list(content.sectionTexts).map((text) => `<article class="section-card"><p>${text}</p></article>`).join('');
       const services = list(content.services).map((service) => `<span class="service">${service}</span>`).join('');
@@ -61,6 +69,27 @@
       document.querySelector('#app').className = 'page';
       document.querySelector('#app').innerHTML = `<section class="hero" style="background-image:linear-gradient(90deg,rgba(23,52,70,.94),rgba(23,52,70,.55)),url('${escapeHtml(assetUrl(content.heroImage) || '')}')"><div class="hero-content">${content.logo ? `<img class="logo" src="${escapeHtml(assetUrl(content.logo))}" alt="Logo de ${escapeHtml(client.name)}">` : ''}<span class="eyebrow">${escapeHtml(client.name)}</span><h1>${escapeHtml(content.mainTitle || client.name)}</h1><p>${escapeHtml(content.description)}</p></div></section><div class="content">${sections ? `<section class="section"><span class="eyebrow">Sobre nós</span><h2>Conheça nosso trabalho</h2><div class="section-list">${sections}</div></section>` : ''}${services ? `<section class="section"><span class="eyebrow">Serviços</span><h2>Como podemos ajudar</h2><div class="services">${services}</div></section>` : ''}<section class="section"><span class="eyebrow">Contato</span><h2>Fale conosco</h2><div class="contact-grid"><div class="contact-card"><span>E-mail</span><strong>${escapeHtml(content.contact?.email || 'Não informado')}</strong></div><div class="contact-card"><span>Telefone</span><strong>${escapeHtml(content.contact?.phone || 'Não informado')}</strong></div><div class="contact-card"><span>Endereço</span><strong>${escapeHtml(content.contact?.address || 'Não informado')}</strong></div></div>${whatsapp}</section>${socials ? `<section class="section"><span class="eyebrow">Redes sociais</span><div class="socials">${socials}</div></section>` : ''}</div>`;
     };
+    const setupContactForm = () => {
+      const contactSection = document.querySelector('.contact-grid')?.closest('.section');
+      if (!contactSection || contactSection.querySelector('.contact-form')) return;
+      const form = document.createElement('form');
+      form.className = 'contact-form';
+      form.noValidate = false;
+      form.innerHTML = '<label for="contact-name">Nome<input id="contact-name" name="name" required autocomplete="name"></label><label for="contact-email">E-mail<input id="contact-email" name="email" type="email" required autocomplete="email"></label><label for="contact-message">Mensagem<textarea id="contact-message" name="message" required></textarea></label><button type="submit">Enviar pelo WhatsApp</button>';
+      form.addEventListener('submit', (event) => {
+        event.preventDefault();
+        if (!form.reportValidity()) return;
+        const { client, content } = window.currentSiteData || {};
+        const phone = content?.whatsapp?.replace(/[^0-9]/g, '');
+        if (!client || !phone) return;
+        const formData = new FormData(form);
+        const message = `Olá! Vim pelo site da ${client.name}.\n\nNome: ${formData.get('name')}\nE-mail: ${formData.get('email')}\n\nMensagem:\n${formData.get('message')}`;
+        window.open(`https://wa.me/${phone}?text=${encodeURIComponent(message)}`, '_blank', 'noopener,noreferrer');
+      });
+      contactSection.append(form);
+    };
+    const contactObserver = new MutationObserver(setupContactForm);
+    contactObserver.observe(document.querySelector('#app'), { childList: true, subtree: true });
     const load = async () => {
       if (!slug) { document.querySelector('#app').innerHTML = '<div class="empty"><p class="error">Informe o Client na URL: ?client=slug-do-client</p></div>'; return; }
       try { const response = await fetch(`${API_URL}/api/public/site-content/${encodeURIComponent(slug)}`); const data = await response.json(); if (!response.ok) throw new Error(data.message || 'Site não encontrado'); render(data); } catch (error) { document.querySelector('#app').innerHTML = `<div class="empty"><p class="error">${escapeHtml(error.message)}</p></div>`; }

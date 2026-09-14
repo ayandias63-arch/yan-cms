@@ -6,6 +6,7 @@
   "scripts": {
     "start": "node src/server.js",
     "migrate:uploads": "node scripts/migrate-uploads-to-gridfs.js",
+    "cleanup:gridfs": "node scripts/cleanup-gridfs.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
