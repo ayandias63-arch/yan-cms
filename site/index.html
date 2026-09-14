@@ -50,6 +50,11 @@
     .contact-form textarea{min-height:120px;resize:vertical}
     .contact-form button{justify-self:start;padding:13px 17px;border:0;border-radius:8px;color:#fff;background:#24966d;font:inherit;font-weight:700;cursor:pointer}
   </style>
+  <style>
+    .article-dialog-content [data-dialog-content] {
+      white-space: pre-wrap;
+    }
+  </style>
 </head>
 <body>
   <main id="app" class="empty"><p class="loading">Carregando site...</p></main>
@@ -58,7 +63,6 @@
     const assetUrl = (url) => url && url.startsWith('/') ? `${API_URL}${url}` : url;
     const slug = new URLSearchParams(window.location.search).get('client');
     const escapeHtml = (value = '') => String(value).replace(/[&<>'"]/g, (char) => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', "'":'&#039;', '"':'&quot;' }[char]));
-    const formatArticleContent = (value = '') => String(value).split(/\r?\n\s*\r?\n/).filter((paragraph) => paragraph.trim()).map((paragraph) => `<p>${escapeHtml(paragraph).replace(/\r?\n/g, '<br>')}</p>`).join('');
     const list = (values = []) => values.filter(Boolean).map((value) => escapeHtml(value));
     const render = ({ client, content }) => {
       window.currentSiteData = { client, content };
@@ -124,7 +128,7 @@
           dialog.querySelector('[data-dialog-category]').textContent = article.category || '';
           dialog.querySelector('[data-dialog-date]').textContent = formatDate(article.createdAt);
           dialog.querySelector('[data-dialog-title]').textContent = article.title;
-          dialog.querySelector('[data-dialog-content]').innerHTML = formatArticleContent(article.content || article.excerpt || '');
+          dialog.querySelector('[data-dialog-content]').textContent = article.content || article.excerpt || '';
           const image = dialog.querySelector('.article-dialog-image');
           image.src = assetUrl(article.image || '');
           image.hidden = !article.image;
